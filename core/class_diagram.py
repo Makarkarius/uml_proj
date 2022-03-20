@@ -5,7 +5,7 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
-classes = [('a', 'n')]
+classes = []
 
 
 class Example(QWidget):
@@ -14,37 +14,35 @@ class Example(QWidget):
         a = '@startuml\nBob -> Alice : hello\nBob -> Alice : hello\nBob -> Alice : hello\n@enduml'.encode('utf-8').hex()
         response = requests.get(f'https://www.plantuml.com/plantuml/png/~h{a}')
 
-        pixmap = QPixmap()
-        pixmap.loadFromData(response.content)
+        self.diagram = QPixmap()
+        self.diagram.loadFromData(response.content)
 
-        topRight = QFrame()
-        topRight.setFrameShape(QFrame.StyledPanel)
-        botRight = QFrame()
-        botRight.setFrameShape(QFrame.StyledPanel)
-        labelTopRight = QLabel(" labelTopRight", topRight)
-        del_class = QPushButton("del", botRight)
-        self.write_class = QLineEdit(botRight)
+        self.topRight = QFrame()
+        self.topRight.setFrameShape(QFrame.StyledPanel)
+        self.botRight = QFrame()
+        self.botRight.setFrameShape(QFrame.StyledPanel)
+
+
+        self.write_class = QLineEdit(self.botRight)
         self.write_class.move(0, 20)
-        add_class = QPushButton("add", botRight)
-        add_class.move(150, 20)
-        del_class.clicked.connect(self.delete)
-        add_class.clicked.connect(self.add)
-        del_class.move(150, 0)
-        self.combo = QComboBox(botRight)
+
+
+        self.combo = QComboBox(self.botRight)
         self.combo.addItems(classes)
         self.combo.activated[str].connect(self.onActivated)
 
         leftFrame = QFrame()
         leftFrame.setFrameShape(QFrame.StyledPanel)
+
         labelLeft = QLabel(" labelLeft", leftFrame)
-        labelLeft.setPixmap(pixmap)
+        labelLeft.setPixmap(self.diagram)
         labelLeft.setAlignment(Qt.AlignCenter)
 
         splitter1 = QSplitter(Qt.Vertical)
 
 
-        splitter1.addWidget(topRight)
-        splitter1.addWidget(botRight)
+        splitter1.addWidget(self.topRight)
+        splitter1.addWidget(self.botRight)
 
         splitter2 = QSplitter(Qt.Horizontal)
 
@@ -55,6 +53,17 @@ class Example(QWidget):
         hbox = QHBoxLayout(self)
         hbox.addWidget(splitter2)
         self.setLayout(hbox)
+        self.create_btns()
+
+    def create_btns(self):
+
+        del_class_btn = QPushButton("del", self.botRight)
+        del_class_btn.clicked.connect(self.delete)
+        del_class_btn.move(150, 0)
+
+        add_class_btn = QPushButton("add", self.botRight)
+        add_class_btn.move(150, 20)
+        add_class_btn.clicked.connect(self.add)
 
     def onActivated(self, text):
         a = text
@@ -74,6 +83,10 @@ class Example(QWidget):
         self.combo.clear()
         self.combo.addItems(classes)
 
+    def update(self):
+        print(1)
+
+
 
 class MainWindow(QMainWindow):
     def __init__(self, parent=None):
@@ -83,6 +96,8 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.area)
 
     def createMenus(self):
+        self.update = self.menuBar().addAction("&Обновить", self.update)
+
         self.fileMenu = self.menuBar().addMenu("&File")
         self.fileMenu.addSeparator()
 
@@ -90,6 +105,9 @@ class MainWindow(QMainWindow):
         self.editMenu.addSeparator()
 
         self.helpMenu = self.menuBar().addMenu("&Help")
+
+    def update(self):
+        self.area.update()
 
 
 if __name__ == '__main__':
