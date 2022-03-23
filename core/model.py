@@ -13,7 +13,7 @@ class Method:
         self.name = name
         self.tp = tp
         self.md = md
-        self.params: List[Param] = []
+        self.params: str = ''
         self.extr = extr
 
 
@@ -23,12 +23,6 @@ class Field:
         self.tp = tp
         self.md = md
         self.extr = extr
-
-
-class Param:
-    def __init__(self, name, tp):
-        self.name = name
-        self.tp = tp
 
 
 class Link:
