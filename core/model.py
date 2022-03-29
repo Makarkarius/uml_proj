@@ -34,3 +34,20 @@ class Link:
         self.comm = comm
         self.left = left
         self.right = right
+
+
+class LinkActs:
+    def __init__(self, tp, a1, a2, comm=""):
+        self.tp = tp
+        self.a1 = a1
+        self.a2 = a2
+        self.comm = comm
+
+
+class Acts:
+    def __init__(self):
+        self.system_name = ""
+        self.actions = []
+        self.actors = []
+        self.LinkActs: List[LinkActs] = []
+        self.comm = ""

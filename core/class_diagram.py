@@ -436,6 +436,6 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     ex = MainWindow()
     ex.setGeometry(1000, 1000, 1000, 600)
-    ex.setWindowTitle('class diagramm')
+    ex.setWindowTitle('диаграмма классов')
     ex.show()
     sys.exit(app.exec_())
