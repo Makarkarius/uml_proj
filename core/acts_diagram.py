@@ -54,7 +54,7 @@ class ActsFrame(QWidget):
 
 
     def crt(self):
-        self.system = QLineEdit('213', self.rightFrame)
+        self.system = QLineEdit(self.rightFrame)
         self.system.move(10, 5)
         self.system.resize(100, 20)
         self.system.setPlaceholderText('название системы')
@@ -80,6 +80,9 @@ class ActsFrame(QWidget):
         self.action_nick.resize(80, 20)
         self.action_b = QPushButton('создать', self.rightFrame)
         self.action_b.move(230, 65)
+
+
+
 
 
 
