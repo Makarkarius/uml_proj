@@ -3,9 +3,9 @@ import sys
 from PyQt5.QtCore import *
 from PyQt5.QtGui import QPixmap, QFont
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QFrame, QSplitter, QLabel, QLineEdit, QHBoxLayout, \
-    QPushButton
+    QPushButton, QComboBox
 
-
+links = ['использование', 'наследование', 'ничего']
 class ActsFrame(QWidget):
     def __init__(self):
         super().__init__()
@@ -81,10 +81,39 @@ class ActsFrame(QWidget):
         self.action_b = QPushButton('создать', self.rightFrame)
         self.action_b.move(230, 65)
 
+        self.actor_combo = QComboBox(self.rightFrame)
+        self.actor_combo.move(10, 95)
+        self.actor_combo.resize(100, 20)
+        self.del_actor = QPushButton('удалить эктора', self.rightFrame)
+        self.del_actor.move(10, 120)
+        self.del_actor.resize(100, 20)
 
+        self.action_combo = QComboBox(self.rightFrame)
+        self.action_combo.move(120, 95)
+        self.action_combo.resize(100, 20)
+        self.del_action = QPushButton('удалить действие', self.rightFrame)
+        self.del_action.move(120, 120)
+        self.del_action.resize(100, 20)
 
+        ql = QLabel("связи", self.rightFrame)
+        ql.move(10, 155)
 
-
+        self.left = QComboBox(self.rightFrame)
+        self.link = QComboBox(self.rightFrame)
+        self.right = QComboBox(self.rightFrame)
+        self.left.resize(90, 20)
+        self.link.resize(90, 20)
+        self.right.resize(90, 20)
+        self.left.move(10, 180)
+        self.link.move(110, 180)
+        self.right.move(210, 180)
+        self.comm = QLineEdit(self.rightFrame)
+        self.comm.resize(90, 20)
+        self.comm.move(110, 205)
+        self.comm.setPlaceholderText('комм')
+        self.link_b = QPushButton('добавить изменения', self.rightFrame)
+        self.link_b.resize(120, 20)
+        self.link_b.move(95, 230)
 
 
 class MainWindow(QMainWindow):
