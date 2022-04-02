@@ -6,13 +6,14 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
+from core.encoder import encode_class_diagram
 from core.model import Class, Link, Field, Method
 
-classes = [Class('123', 't')]
+classes = [Class('123', 'class')]
 cl_links: List[Link] = []
 links = ['агрегация', 'композиция', 'наследование', 'ассоциация', 'связь', 'без связи']
 modificators = ['public', 'package private', 'protected', 'private', 'отсутсвует']
-cl_types = ['class', 'enum', 'interface']
+cl_types = ['class', 'enum', 'interface', 'entity', 'abstract class']
 
 
 class CDFrame(QWidget):
@@ -57,7 +58,7 @@ class CDFrame(QWidget):
         hbox.addWidget(splitter2)
 
         self.textbox_classes_errors = QLineEdit("", self.botRight)
-        self.textbox_classes_errors.readOnly = True
+        self.textbox_classes_errors.setReadOnly(True)
         self.textbox_classes_errors.move(10, 180)
         self.textbox_classes_errors.setFrame(False)
         font = QFont()
@@ -172,7 +173,7 @@ class CDFrame(QWidget):
         self.del_mt_b.resize(100, 20)
 
         self.textbox_attr_errors = QLineEdit("", self.topRight)
-        self.textbox_attr_errors.readOnly = True
+        self.textbox_attr_errors.setReadOnly(True)
         self.textbox_attr_errors.move(10, 180)
         self.textbox_attr_errors.setFrame(False)
         font = QFont()
@@ -295,6 +296,9 @@ class CDFrame(QWidget):
                 l.tp = tp
                 return
         cl_links.append(Link(tp, c1, c2, c1_comm, c2_comm, comm))
+        self.comment_c1.clear()
+        self.comment_c2.clear()
+        self.comment_link.clear()
 
     def add_fld(self):
         self.textbox_attr_errors.clear()
@@ -390,14 +394,14 @@ class CDFrame(QWidget):
             i += 1
         self.del_field.clear()
         for f in cl.flds:
-            self.del_fieldt.addItem(f.name)
+            self.del_field.addItem(f.name)
 
 
     def update(self):
-        if not classes:
-            a = '@startuml\nclass Class11\nClass11->Class12\n@enduml'.encode(
+        if classes:
+            data = encode_class_diagram(classes, cl_links).encode(
                 'utf-8').hex()
-            response = requests.get(f'https://www.plantuml.com/plantuml/png/~h{a}')
+            response = requests.get(f'https://www.plantuml.com/plantuml/png/~h{data}')
             diagram = QPixmap()
             diagram.loadFromData(response.content)
             w = diagram.width()

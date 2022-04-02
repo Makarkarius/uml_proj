@@ -49,5 +49,5 @@ class Acts:
         self.system_name = ""
         self.actions = []
         self.actors = []
-        self.LinkActs: List[LinkActs] = []
+        self.linkActs: List[LinkActs] = []
         self.comm = ""

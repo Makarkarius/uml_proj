@@ -6,7 +6,7 @@ database.setDatabaseName('test.db')
 database.open()
 
 query = QSqlQuery()
-query.prepare('create table student (id int primary key, name message_text ,age int)')
+query.prepare('create table student (id integer primary key autoincrement not null, name message_text ,age int)')
 if not query.exec_():
     query.lastError()
 else:
@@ -14,7 +14,7 @@ else:
 
 insert_sql = 'insert into student values (?,?,?)'
 query.prepare(insert_sql)
-query.addBindValue(4)
+query.addBindValue(None)
 query.addBindValue('test3')
 query.addBindValue(1)
 if not query.exec_():
