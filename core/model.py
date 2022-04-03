@@ -10,12 +10,11 @@ class Class:
 
 
 class Method:
-    def __init__(self, name, tp, md, extr=""):
+    def __init__(self, name, tp, md, params):
         self.name = name
         self.tp = tp
         self.md = md
-        self.params: str = ''
-        self.extr = extr
+        self.params: str = params
 
 
 class Field:

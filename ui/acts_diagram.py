@@ -1,13 +1,16 @@
 import sys
+from typing import List
 
-import requests
+import requests as requests
 from PyQt5.QtCore import *
-from PyQt5.QtGui import QPixmap, QFont
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QFrame, QSplitter, QLabel, QLineEdit, QHBoxLayout, \
-    QPushButton, QComboBox
+from PyQt5.QtGui import *
+from PyQt5.QtWidgets import *
 
 from core import encoder
-from core.model import Acts, LinkActs
+from core.encoder import encode_class_diagram
+from core.model import Class, Link, Field, Method, Acts, LinkActs
+from ui import main_window
+from ui.main_window import Menu
 
 links = ['использование', 'наследование', 'ничего']
 acts = Acts()
@@ -57,6 +60,7 @@ class ActsFrame(QWidget):
 
         self.setLayout(hbox)
         self.crt()
+
 
 
     def crt(self):
@@ -258,6 +262,8 @@ class ActsFrame(QWidget):
             QApplication.processEvents()
 
 
+
+
 class MainWindow(QMainWindow):
     def __init__(self, parent=None):
         super(MainWindow, self).__init__(parent)
@@ -268,8 +274,9 @@ class MainWindow(QMainWindow):
     def createMenus(self):
         self.update = self.menuBar().addAction("&Обновить", self.update)
 
-        self.fileMenu = self.menuBar().addMenu("&File")
-        self.fileMenu.addSeparator()
+        self.fileMenu = self.menuBar().addAction("&Меню", self.menu)
+
+        self.fileMenu = self.menuBar().addAction("&Выход", self.close)
 
         self.editMenu = self.menuBar().addMenu("&Edit")
         self.editMenu.addSeparator()
@@ -278,6 +285,15 @@ class MainWindow(QMainWindow):
 
     def update(self):
         self.area.update()
+
+    def menu(self):
+        self.close()
+        main_window.ex = Menu()
+        main_window.ex.setGeometry(1000, 1000, 1000, 600)
+        main_window.ex.setFixedSize(500, 350)
+        main_window.ex.move(QApplication.desktop().screen().rect().center() - main_window.ex.rect().center())
+        main_window.ex.setWindowTitle('меню')
+        main_window.ex.show()
 
 
 

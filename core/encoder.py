@@ -19,10 +19,12 @@ def encode_class_diagram(classes: List[Class], links: List[Link]):
         ans += l.cl1
         if l.left:
             ans += f' "{l.left}" '
+        ans += ' '
         ans += link
         if l.right:
             ans += f' "{l.right}" '
         ans += l.cl2
+        ans += ' '
         if l.comm:
             ans += f' :{l.comm}'
         ans += '\n'

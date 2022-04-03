@@ -8,6 +8,8 @@ from PyQt5.QtWidgets import *
 
 from core.encoder import encode_class_diagram
 from core.model import Class, Link, Field, Method
+from ui import main_window
+from ui.main_window import Menu
 
 classes = [Class('123', 'class')]
 cl_links: List[Link] = []
@@ -79,6 +81,7 @@ class CDFrame(QWidget):
         self.create_btns_for_classes()
         self.create_combos_for_classes()
         self.create_attr_for_mts()
+
 
     def create_btns_for_classes(self):
 
@@ -153,7 +156,7 @@ class CDFrame(QWidget):
             for m in cl.mts:
                 self.del_mt.addItem(m.name)
             for f in cl.flds:
-                self.del_mt.addItem(f.name)
+                self.del_field.addItem(f.name)
         self.del_field.resize(100, 20)
         self.del_mt.resize(100, 20)
         self.del_field.move(10, 255)
@@ -423,8 +426,9 @@ class MainWindow(QMainWindow):
     def createMenus(self):
         self.update = self.menuBar().addAction("&Обновить", self.update)
 
-        self.fileMenu = self.menuBar().addMenu("&File")
-        self.fileMenu.addSeparator()
+        self.fileMenu = self.menuBar().addAction("&Меню", self.menu)
+
+        self.fileMenu = self.menuBar().addAction("&Выход", self.close)
 
         self.editMenu = self.menuBar().addMenu("&Edit")
         self.editMenu.addSeparator()
@@ -433,6 +437,15 @@ class MainWindow(QMainWindow):
 
     def update(self):
         self.area.update()
+
+    def menu(self):
+        self.close()
+        main_window.ex = Menu()
+        main_window.ex.setGeometry(1000, 1000, 1000, 600)
+        main_window.ex.setFixedSize(500, 350)
+        main_window.ex.move(QApplication.desktop().screen().rect().center() - main_window.ex.rect().center())
+        main_window.ex.setWindowTitle('меню')
+        main_window.ex.show()
 
 
 
