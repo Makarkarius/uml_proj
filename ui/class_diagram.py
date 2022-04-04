@@ -7,11 +7,14 @@ from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
 from core.encoder import encode_class_diagram
+from core.entity import CDEntity
 from core.model import Class, Link, Field, Method
+from core.serializers import serialize
 from ui import main_window
 from ui.main_window import Menu
+from ui.save_dialog import ClssDialog
 
-classes = [Class('123', 'class')]
+classes = []
 cl_links: List[Link] = []
 links = ['агрегация', 'композиция', 'наследование', 'ассоциация', 'связь', 'без связи']
 modificators = ['public', 'package private', 'protected', 'private', 'отсутсвует']
@@ -22,7 +25,6 @@ class CDFrame(QWidget):
     def __init__(self):
         super().__init__()
         self.diagram = QPixmap('')
-
         self.topRight = QFrame()
         self.topRight.setFrameShape(QFrame.StyledPanel)
         self.botRight = QFrame()
@@ -81,6 +83,7 @@ class CDFrame(QWidget):
         self.create_btns_for_classes()
         self.create_combos_for_classes()
         self.create_attr_for_mts()
+        self.update()
 
 
     def create_btns_for_classes(self):
@@ -409,11 +412,18 @@ class CDFrame(QWidget):
             diagram.loadFromData(response.content)
             w = diagram.width()
             h = diagram.height()
+            self.labelLeft.setAlignment(Qt.AlignCenter)
             self.labelLeft.setFixedHeight(h)
             self.labelLeft.setFixedWidth(w)
             self.labelLeft.setPixmap(diagram)
             self.labelLeft.update()
-            QApplication.processEvents()
+
+    def save(self):
+        data = serialize(CDEntity(classes, cl_links))
+        dialog = ClssDialog(data, 'cd')
+        dialog.setWindowTitle('сохранение')
+        dialog.setFixedSize(250, 100)
+        dialog.exec_()
 
 
 class MainWindow(QMainWindow):
@@ -426,17 +436,21 @@ class MainWindow(QMainWindow):
     def createMenus(self):
         self.update = self.menuBar().addAction("&Обновить", self.update)
 
-        self.fileMenu = self.menuBar().addAction("&Меню", self.menu)
+        self.sv = self.menuBar().addAction("&Сохранить", self.save)
 
-        self.fileMenu = self.menuBar().addAction("&Выход", self.close)
+        self.download = self.menuBar().addMenu("&Скачать")
+        self.download.addSeparator()
 
-        self.editMenu = self.menuBar().addMenu("&Edit")
-        self.editMenu.addSeparator()
+        self.toMenu = self.menuBar().addAction("&Меню", self.menu)
 
-        self.helpMenu = self.menuBar().addMenu("&Help")
+        self.exit= self.menuBar().addAction("&Выход", self.close)
+
 
     def update(self):
         self.area.update()
+
+    def save(self):
+        self.area.save()
 
     def menu(self):
         self.close()

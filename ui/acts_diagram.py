@@ -2,15 +2,20 @@ import sys
 from typing import List
 
 import requests as requests
+from PyQt5 import QtWidgets
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
+from urllib3.packages.six import exec_
 
 from core import encoder
 from core.encoder import encode_class_diagram
+from core.entity import ActsEntity
 from core.model import Class, Link, Field, Method, Acts, LinkActs
+from core.serializers import serialize, deserialize
 from ui import main_window
 from ui.main_window import Menu
+from ui.save_dialog import ClssDialog
 
 links = ['использование', 'наследование', 'ничего']
 acts = Acts()
@@ -60,6 +65,7 @@ class ActsFrame(QWidget):
 
         self.setLayout(hbox)
         self.crt()
+        self.update()
 
 
 
@@ -255,13 +261,20 @@ class ActsFrame(QWidget):
             diagram.loadFromData(response.content)
             w = diagram.width()
             h = diagram.height()
+            self.labelLeft.setAlignment(Qt.AlignCenter)
             self.labelLeft.setFixedHeight(h)
             self.labelLeft.setFixedWidth(w)
             self.labelLeft.setPixmap(diagram)
             self.labelLeft.update()
-            QApplication.processEvents()
 
-
+    def save(self):
+        if self.system.text():
+            acts.system_name = self.system.text()
+        data = serialize(ActsEntity(acts))
+        dialog = ClssDialog(data, 'ac')
+        dialog.setWindowTitle('сохранение')
+        dialog.setFixedSize(250, 100)
+        dialog.exec_()
 
 
 class MainWindow(QMainWindow):
@@ -274,17 +287,20 @@ class MainWindow(QMainWindow):
     def createMenus(self):
         self.update = self.menuBar().addAction("&Обновить", self.update)
 
-        self.fileMenu = self.menuBar().addAction("&Меню", self.menu)
+        self.sv = self.menuBar().addAction("&Сохранить", self.save)
 
-        self.fileMenu = self.menuBar().addAction("&Выход", self.close)
+        self.download = self.menuBar().addMenu("&Скачать")
+        self.download.addSeparator()
 
-        self.editMenu = self.menuBar().addMenu("&Edit")
-        self.editMenu.addSeparator()
+        self.toMenu = self.menuBar().addAction("&Меню", self.menu)
 
-        self.helpMenu = self.menuBar().addMenu("&Help")
+        self.exit = self.menuBar().addAction("&Выход", self.close)
 
     def update(self):
         self.area.update()
+
+    def save(self):
+        self.area.save()
 
     def menu(self):
         self.close()
