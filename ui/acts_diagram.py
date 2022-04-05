@@ -1,3 +1,4 @@
+import os
 import sys
 from typing import List
 
@@ -291,10 +292,56 @@ class MainWindow(QMainWindow):
 
         self.download = self.menuBar().addMenu("&Скачать")
         self.download.addSeparator()
+        self.download.addAction("&png", self.export_png)
+        self.download.addAction("&svg", self.export_svg)
+        self.download.addAction("&код", self.export_code)
 
         self.toMenu = self.menuBar().addAction("&Меню", self.menu)
 
         self.exit = self.menuBar().addAction("&Выход", self.close)
+
+    def export_code(self):
+        dirlist = QFileDialog.getExistingDirectory(self, "Выбрать папку", ".")
+        if len(acts.linkActs) > 0 or len(acts.actors) > 0:
+            data = encoder.encode_acts_diagram(acts)
+            file = f'{dirlist}/ac.txt'
+            if os.path.isfile(file):
+                i = 0
+                while os.path.isfile(f'{dirlist}/ac{i}'):
+                    i += 1
+                file = f'{dirlist}/ac{i}.txt'
+            with open(file, 'w') as target:
+                target.write(data)
+
+    def export_png(self):
+        dirlist = QFileDialog.getExistingDirectory(self, "Выбрать папку", ".")
+        if len(acts.linkActs) > 0 or len(acts.actors) > 0:
+            data = encoder.encode_acts_diagram(acts).encode(
+                'utf-8').hex()
+            file = f'{dirlist}/ac.png'
+            if os.path.isfile(file):
+                i = 0
+                while os.path.isfile(f'{dirlist}/ac{i}'):
+                    i += 1
+                file = f'{dirlist}/ac{i}.png'
+            with open(file, 'wb') as target:
+                response = requests.get(f'https://www.plantuml.com/plantuml/png/~h{data}')
+                target.write(response.content)
+
+    def export_svg(self):
+        dirlist = QFileDialog.getExistingDirectory(self, "Выбрать папку", ".")
+        if len(acts.linkActs) > 0 or len(acts.actors) > 0:
+            data = encoder.encode_acts_diagram(acts).encode(
+                'utf-8').hex()
+            file = f'{dirlist}/ac.svg'
+            if os.path.isfile(file):
+                i = 0
+                while os.path.isfile(f'{dirlist}/ac{i}'):
+                    i += 1
+                file = f'{dirlist}/ac{i}.svg'
+            with open(file, 'wb') as target:
+                response = requests.get(f'https://www.plantuml.com/plantuml/svg/~h{data}')
+                target.write(response.content)
 
     def update(self):
         self.area.update()
