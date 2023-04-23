@@ -1,36 +1,29 @@
-import os
 import sys
-from typing import List
 
-import requests as requests
-from PyQt5 import QtWidgets
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
-from urllib3.packages.six import exec_
 
-from core import encoder
-from core.encoder import encode_class_diagram
+from application.acts_diagram_controller import ActsDiagramController
 from core.entity import ActsEntity
-from core.model import Class, Link, Field, Method, Acts, LinkActs
-from core.serializers import serialize, deserialize
-from ui import main_window
-from ui.main_window import Menu
 from ui.save_dialog import ClssDialog
 
 links = ['использование', 'наследование', 'ничего']
-acts = Acts()
+
 
 class ActsFrame(QWidget):
-    def __init__(self):
+    def __init__(self, controller: ActsDiagramController, model: ActsEntity):
         super().__init__()
+
+        self.controller = controller
+        self.model = model
+
         self.diagram = QPixmap('')
 
         self.topRight = QFrame()
         self.topRight.setFrameShape(QFrame.StyledPanel)
         self.botRight = QFrame()
         self.botRight.setFrameShape(QFrame.StyledPanel)
-
 
         self.leftFrame = QFrame()
         self.leftFrame.setFrameShape(QFrame.StyledPanel)
