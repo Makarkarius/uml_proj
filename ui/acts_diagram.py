@@ -68,14 +68,12 @@ class ActsFrame(QWidget):
         self.crt()
         self.update()
 
-
-
     def crt(self):
         self.system = QLineEdit(self.rightFrame)
         self.system.move(10, 5)
         self.system.resize(100, 20)
         self.system.setPlaceholderText('название системы')
-        self.system.setText(acts.system_name)
+        self.system.setText(self.model.acts.system_name)
 
         self.actor = QLineEdit(self.rightFrame)
         self.actor.move(10, 40)
@@ -102,7 +100,7 @@ class ActsFrame(QWidget):
         self.action_b.move(230, 65)
 
         self.actor_combo = QComboBox(self.rightFrame)
-        for a in acts.actors:
+        for a in self.model.acts.actors:
             self.actor_combo.addItem(a[1])
         self.actor_combo.move(10, 95)
         self.actor_combo.resize(100, 20)
@@ -112,7 +110,7 @@ class ActsFrame(QWidget):
         self.del_actor.resize(100, 20)
 
         self.action_combo = QComboBox(self.rightFrame)
-        for a in acts.actions:
+        for a in self.model.acts.actions:
             self.action_combo.addItem(a[1])
         self.action_combo.move(120, 95)
         self.action_combo.resize(100, 20)
@@ -128,10 +126,10 @@ class ActsFrame(QWidget):
         self.link = QComboBox(self.rightFrame)
         self.link.addItems(links)
         self.right = QComboBox(self.rightFrame)
-        for a in acts.actors:
+        for a in self.model.acts.actors:
             self.left.addItem(a[1])
             self.left.addItem(a[1])
-        for a in acts.actions:
+        for a in self.model.acts.actions:
             self.right.addItem(a[1])
             self.right.addItem(a[1])
         self.left.resize(90, 20)
@@ -154,15 +152,12 @@ class ActsFrame(QWidget):
         if not self.actor.text() or not self.actor_nick.text():
             self.textbox_errors.setText("Введите все поля для эктора")
             return
-        for a in acts.actors:
-            if a[1] == self.actor_nick.text():
-                self.textbox_errors.setText("Ник уже занят")
-                return
-        for a in acts.actions:
-            if a[1] == self.actor_nick.text():
-                self.textbox_errors.setText("Ник уже занят")
-                return
-        acts.actors.append([self.actor.text(), self.actor_nick.text()])
+
+        exists = self.controller.add_actor(self.actor_nick.text(), self.actor.text())
+        if exists:
+            self.textbox_errors.setText("Ник уже занят")
+            return
+
         self.actor_combo.addItem(self.actor_nick.text())
         self.left.addItem(self.actor_nick.text())
         self.right.addItem(self.actor_nick.text())
@@ -174,15 +169,12 @@ class ActsFrame(QWidget):
         if not self.action.text() or not self.action_nick.text():
             self.textbox_errors.setText("Введите все поля для действия")
             return
-        for a in acts.actors:
-            if a[1] == self.action_nick.text():
-                self.textbox_errors.setText("Ник уже занят")
-                return
-        for a in acts.actions:
-            if a[1] == self.action_nick.text():
-                self.textbox_errors.setText("Ник уже занят")
-                return
-        acts.actions.append([self.action.text(), self.action_nick.text()])
+
+        exists = self.controller.add_action(self.action_nick.text(), self.action.text())
+        if exists:
+            self.textbox_errors.setText("Ник уже занят")
+            return
+
         self.action_combo.addItem(self.action_nick.text())
         self.left.addItem(self.action_nick.text())
         self.right.addItem(self.action_nick.text())
@@ -194,36 +186,27 @@ class ActsFrame(QWidget):
         if not self.left.currentText() or not self.right.currentText():
             self.textbox_errors.setText("Введите все поля для действия")
             return
-        for l in acts.linkActs:
-            if l.a1 == self.left.currentText() and l.a2 == self.right.currentText() or l.a2 == self.left.currentText() and l.a1 == self.right.currentText():
-                l.a1 = self.left.currentText()
-                l.a2 = self.right.currentText()
-                l.tp = self.link.currentText()
-                l.comm = self.comm.text()
-                self.comm.clear()
-                return
-        acts.linkActs.append(LinkActs(self.link.currentText(), self.left.currentText(), self.right.currentText(), self.comm.text()))
+
+        self.controller.edit_link(self.left.currentText(), self.right.currentText(),
+                                  self.link.currentText(), self.comm.text())
         self.comm.clear()
 
     def delete_actor(self):
         self.textbox_errors.clear()
         if not self.actor_combo.currentText():
             return "Экторов нет"
-        i = 0
-        for a in acts.actors:
-            if a[1] == self.actor_combo.currentText():
-                acts.actors.pop(i)
-                break
-            i += 1
+
+        self.controller.delete_actor(self.actor_combo.currentText())
+
         self.actor_combo.clear()
         self.left.clear()
         self.right.clear()
 
-        for a in acts.actors:
+        for a in self.model.acts.actors:
             self.right.addItem(a[1])
             self.left.addItem(a[1])
             self.actor_combo.addItem(a[1])
-        for a in acts.actions:
+        for a in self.model.acts.actions:
             self.left.addItem(a[1])
             self.right.addItem(a[1])
 
@@ -231,35 +214,29 @@ class ActsFrame(QWidget):
         self.textbox_errors.clear()
         if not self.action_combo.currentText():
             return "Действий нет"
-        i = 0
-        for a in acts.actions:
-            if a[1] == self.action_combo.currentText():
-                acts.actions.pop(i)
-                break
-            i += 1
+
+        self.controller.delete_action(self.action_combo.currentText())
+
         self.action_combo.clear()
         self.left.clear()
         self.right.clear()
 
-        for a in acts.actions:
+        for a in self.model.acts.actions:
             self.left.addItem(a[1])
             self.right.addItem(a[1])
             self.action_combo.addItem(a[1])
-        for a in acts.actors:
+        for a in self.model.acts.actors:
             self.left.addItem(a[1])
             self.right.addItem(a[1])
 
-
-
     def update(self):
-        if len(acts.linkActs) > 0 or len(acts.actors) > 0:
+        if len(self.model.acts.linkActs) > 0 or len(self.model.acts.actors) > 0:
             if self.system.text():
-                acts.system_name = self.system.text()
-            uml = encoder.encode_acts_diagram(acts).encode(
-                'utf-8').hex()
-            response = requests.get(f'https://www.plantuml.com/plantuml/png/~h{uml}')
+                self.model.acts.system_name = self.system.text()
+            data = self.controller.update()
             diagram = QPixmap()
-            diagram.loadFromData(response.content)
+            diagram.loadFromData(data)
+
             w = diagram.width()
             h = diagram.height()
             self.labelLeft.setAlignment(Qt.AlignCenter)
@@ -270,22 +247,30 @@ class ActsFrame(QWidget):
 
     def save(self):
         if self.system.text():
-            acts.system_name = self.system.text()
-        data = serialize(ActsEntity(acts))
-        dialog = ClssDialog(data, 'ac')
+            self.model.acts.system_name = self.system.text()
+        data = self.controller.save()
+        dialog = ClssDialog(self.controller, data, 'ac')
         dialog.setWindowTitle('сохранение')
         dialog.setFixedSize(250, 100)
         dialog.exec_()
 
 
 class MainWindow(QMainWindow):
-    def __init__(self, parent=None):
+    def __init__(self, controller: ActsDiagramController, model: ActsEntity, parent=None):
         super(MainWindow, self).__init__(parent)
-        self.createMenus()
-        self.area = ActsFrame()
+
+        self.controller = controller
+        self.model = model
+
+        self.create_menus()
+        self.area = ActsFrame(self.controller, self.model)
         self.setCentralWidget(self.area)
 
-    def createMenus(self):
+    def exit(self):
+        self.close()
+        sys.exit(0)
+
+    def create_menus(self):
         self.update = self.menuBar().addAction("&Обновить", self.update)
 
         self.sv = self.menuBar().addAction("&Сохранить", self.save)
@@ -298,50 +283,22 @@ class MainWindow(QMainWindow):
 
         self.toMenu = self.menuBar().addAction("&Меню", self.menu)
 
-        self.exit = self.menuBar().addAction("&Выход", self.close)
+        self.exit = self.menuBar().addAction("&Выход", self.exit)
 
     def export_code(self):
         dirlist = QFileDialog.getExistingDirectory(self, "Выбрать папку", ".")
-        if len(acts.linkActs) > 0 or len(acts.actors) > 0:
-            data = encoder.encode_acts_diagram(acts)
-            file = f'{dirlist}/ac.txt'
-            if os.path.isfile(file):
-                i = 0
-                while os.path.isfile(f'{dirlist}/ac{i}'):
-                    i += 1
-                file = f'{dirlist}/ac{i}.txt'
-            with open(file, 'w') as target:
-                target.write(data)
+        if len(self.model.acts.linkActs) > 0 or len(self.acts.actors) > 0:
+            self.controller.export_code(dirlist)
 
     def export_png(self):
         dirlist = QFileDialog.getExistingDirectory(self, "Выбрать папку", ".")
-        if len(acts.linkActs) > 0 or len(acts.actors) > 0:
-            data = encoder.encode_acts_diagram(acts).encode(
-                'utf-8').hex()
-            file = f'{dirlist}/ac.png'
-            if os.path.isfile(file):
-                i = 0
-                while os.path.isfile(f'{dirlist}/ac{i}'):
-                    i += 1
-                file = f'{dirlist}/ac{i}.png'
-            with open(file, 'wb') as target:
-                response = requests.get(f'https://www.plantuml.com/plantuml/png/~h{data}')
-                target.write(response.content)
+        if len(self.model.acts.linkActs) > 0 or len(self.model.acts.actors) > 0:
+            self.controller.export_png(dirlist)
 
     def export_svg(self):
         dirlist = QFileDialog.getExistingDirectory(self, "Выбрать папку", ".")
-        if len(acts.linkActs) > 0 or len(acts.actors) > 0:
-            data = encoder.encode_acts_diagram(acts).encode(
-                'utf-8').hex()
-            file = f'{dirlist}/ac.svg'
-            if os.path.isfile(file):
-                i = 0
-                while os.path.isfile(f'{dirlist}/ac{i}'):
-                    i += 1
-                file = f'{dirlist}/ac{i}.svg'
-            with open(file, 'wb') as target:
-                response = requests.get(f'https://www.plantuml.com/plantuml/svg/~h{data}')
-                target.write(response.content)
+        if len(self.model.acts.linkActs) > 0 or len(self.model.acts.actors) > 0:
+            self.controller.export_svg(dirlist)
 
     def update(self):
         self.area.update()
@@ -350,20 +307,5 @@ class MainWindow(QMainWindow):
         self.area.save()
 
     def menu(self):
+        self.controller.show_menu()
         self.close()
-        main_window.ex = Menu()
-        main_window.ex.setGeometry(1000, 1000, 1000, 600)
-        main_window.ex.setFixedSize(500, 350)
-        main_window.ex.move(QApplication.desktop().screen().rect().center() - main_window.ex.rect().center())
-        main_window.ex.setWindowTitle('меню')
-        main_window.ex.show()
-
-
-
-if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    ex = MainWindow()
-    ex.setGeometry(1000, 1000, 1000, 600)
-    ex.setWindowTitle('диаграмма прецедентов')
-    ex.show()
-    sys.exit(app.exec_())

@@ -2,12 +2,11 @@ from PyQt5 import QtWidgets
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import QLineEdit
 
-from core import db_manager
-
 
 class ClssDialog(QtWidgets.QDialog):
-    def __init__(self, data, type, parent=None):
+    def __init__(self, controller, data, type, parent=None):
         super(ClssDialog, self).__init__(parent)
+        self.controller = controller
         self.data = data
         self.type = type
         self.name = QLineEdit("", self)
@@ -44,9 +43,9 @@ class ClssDialog(QtWidgets.QDialog):
         if not self.name.text():
             self.textbox_errors.setText("Введите название сохранения")
             return
-        if db_manager.is_name_exist(self.name.text()):
+        if self.controller.is_name_exist(self.name.text()):
             self.textbox_errors.setText("Такое название уже существует")
             return
-        db_manager.insert_data(self.name.text(), self.data, self.type)
+        self.controller.insert_data(self.name.text(), self.data, self.type)
         self.close()
 

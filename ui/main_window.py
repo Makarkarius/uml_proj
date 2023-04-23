@@ -1,25 +1,23 @@
 import sys
 
-import requests
-from PyQt5.QtCore import *
-from PyQt5.QtGui import QPixmap, QFont
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QFrame, QSplitter, QLabel, QLineEdit, QHBoxLayout, \
-    QPushButton, QComboBox
+from PyQt5.QtGui import QFont
+from PyQt5.QtWidgets import QWidget, QFrame, QHBoxLayout, \
+    QPushButton, QComboBox, QApplication
 
-from core import db_manager
-from core.db_manager import insert_data, read_names, delete, load
-from core.model import Class, Acts
-from core.serializers import deserialize
-from ui import acts_diagram
+from application.menu_controller import MenuController
 
 
 class Menu(QWidget):
-    def __init__(self):
+    def __init__(self, controller: MenuController, model=None):
         super().__init__()
+
+        self.controller = controller
+        self.model = model
+
         self.frame = QFrame()
         self.frame.setFrameShape(QFrame.StyledPanel)
         self.cd = QPushButton("Новая диаграмма классов", self.frame)
-        self.cd.clicked.connect(self.cl)
+        self.cd.clicked.connect(self.show_class_diagram)
         font = QFont()
         font.setPointSize(15)
         self.cd.setFont(font)
@@ -27,7 +25,7 @@ class Menu(QWidget):
         self.cd.move(40, 40)
 
         self.ad = QPushButton("Новая диаграмма прецедентов", self.frame)
-        self.ad.clicked.connect(self.ac)
+        self.ad.clicked.connect(self.show_acts_diagram)
         font = QFont()
         font.setPointSize(15)
         self.ad.setFont(font)
@@ -40,7 +38,7 @@ class Menu(QWidget):
         self.comb.setFont(font)
         self.comb.resize(400, 40)
         self.comb.move(40, 160)
-        self.comb.addItems(read_names())
+        self.comb.addItems(self.controller.read_names())
 
         self.open = QPushButton("Загрузить", self.frame)
         self.open.clicked.connect(self.load)
@@ -59,7 +57,7 @@ class Menu(QWidget):
         self.clos.move(240, 205)
 
         self.ad = QPushButton("Выход", self.frame)
-        self.ad.clicked.connect(self.close)
+        self.ad.clicked.connect(self.exit)
         font = QFont()
         font.setPointSize(15)
         self.ad.setFont(font)
@@ -72,67 +70,44 @@ class Menu(QWidget):
         self.setLayout(hbox)
         self.close()
 
-    def cl(self):
-        global ex
+    def exit(self):
         self.close()
-        from ui import class_diagram
-        class_diagram.classes = []
-        class_diagram.cl_links = []
-        ex = class_diagram.MainWindow()
-        ex.setGeometry(1000, 1000, 1000, 600)
-        ex.setWindowTitle('диаграмма классов')
-        ex.move(QApplication.desktop().screen().rect().center() - ex.rect().center())
-        ex.show()
+        sys.exit(0)
 
-    def ac(self):
-        global ex
-        self.close()
-        acts_diagram.acts = Acts()
-        ex = acts_diagram.MainWindow()
-        ex.setGeometry(1000, 1000, 1000, 600)
-        ex.setWindowTitle('диаграмма прецедентов')
-        ex.move(QApplication.desktop().screen().rect().center() - ex.rect().center())
-        ex.show()
+    def show_class_diagram(self):
+        self.hide()
+        self.controller.show_class_diagram()
+
+    def show_acts_diagram(self):
+        self.hide()
+        self.controller.show_acts_diagram()
 
     def load(self):
         if not self.comb.currentText():
             return
-        self.close()
-        ans = load(self.comb.currentText())
-        data = deserialize(ans[0])
-        global ex
-        if ans[1] == 'cd':
-            from ui import class_diagram
-            class_diagram.classes = data.classes
-            class_diagram.cl_links = data.links
-            ex = class_diagram.MainWindow()
-            ex.setGeometry(1000, 1000, 1000, 600)
-            ex.setWindowTitle('диаграмма классов')
-            ex.move(QApplication.desktop().screen().rect().center() - ex.rect().center())
-            ex.show()
-        elif ans[1] == 'ac':
-            acts_diagram.acts = data.acts
-            ex = acts_diagram.MainWindow()
-            ex.setGeometry(1000, 1000, 1000, 600)
-            ex.setWindowTitle('диаграмма прецедентов')
-            ex.move(QApplication.desktop().screen().rect().center() - ex.rect().center())
-            ex.show()
+        self.hide()
+        self.controller.load(self.comb.currentText())
 
     def delete(self):
         if not self.comb.currentText():
             return
-        delete(self.comb.currentText())
+        self.controller.delete(self.comb.currentText())
         self.comb.clear()
-        self.comb.addItems(read_names())
+        self.comb.addItems(self.controller.read_names())
+
+    def update(self):
+        self.comb.clear()
+        data = self.controller.read_names()
+        if data is not None:
+            self.comb.addItems(data)
 
 
-
-if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    ex = Menu()
-    ex.setGeometry(1000, 1000, 1000, 600)
-    ex.setFixedSize(500, 350)
-    ex.setWindowTitle('uml-редактор')
-    ex.move(QApplication.desktop().screen().rect().center() - ex.rect().center())
-    ex.show()
-    sys.exit(app.exec_())
+app = QApplication(sys.argv)
+ctr = MenuController()
+menu = Menu(ctr)
+menu.setGeometry(1000, 1000, 1000, 600)
+menu.setFixedSize(500, 350)
+menu.setWindowTitle('uml-редактор')
+menu.move(QApplication.desktop().screen().rect().center() - menu.rect().center())
+menu.show()
+app.exec()

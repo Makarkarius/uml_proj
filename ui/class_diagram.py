@@ -1,36 +1,30 @@
-import os
 import sys
-from typing import List
 
-import requests as requests
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
-from core.encoder import encode_class_diagram
+from application.class_diagram_controller import ClassDiagramController
 from core.entity import CDEntity
-from core.model import Class, Link, Field, Method
-from core.serializers import serialize
-from ui import main_window
-from ui.main_window import Menu
 from ui.save_dialog import ClssDialog
 
-classes = []
-cl_links: List[Link] = []
-links = ['агрегация', 'композиция', 'наследование', 'ассоциация', 'связь', 'без связи']
+links_list = ['агрегация', 'композиция', 'наследование', 'ассоциация', 'связь', 'без связи']
 modificators = ['public', 'package private', 'protected', 'private', 'отсутсвует']
 cl_types = ['class', 'enum', 'interface', 'entity', 'abstract class']
 
 
 class CDFrame(QWidget):
-    def __init__(self):
+    def __init__(self, controller: ClassDiagramController, model: CDEntity):
         super().__init__()
+
+        self.controller = controller
+        self.model = model
+
         self.diagram = QPixmap('')
         self.topRight = QFrame()
         self.topRight.setFrameShape(QFrame.StyledPanel)
         self.botRight = QFrame()
         self.botRight.setFrameShape(QFrame.StyledPanel)
-
 
         self.write_class = QLineEdit(self.botRight)
         self.write_class.setPlaceholderText('имя класса')
@@ -44,10 +38,7 @@ class CDFrame(QWidget):
         self.labelLeft.setAlignment(Qt.AlignCenter)
         self.labelLeft.setPixmap(self.diagram)
 
-
-
         splitter1 = QSplitter(Qt.Vertical)
-
 
         splitter1.addWidget(self.topRight)
         splitter1.addWidget(self.botRight)
@@ -70,15 +61,11 @@ class CDFrame(QWidget):
         font.setPointSize(11)
         self.textbox_classes_errors.setFont(font)
 
-
-
         self.textbox_classes_errors.setMinimumSize(15, 15)
         self.textbox_classes_errors.setMaximumSize(300, 20)
         self.textbox_classes_errors.resize(300, 20)
 
         self.textbox_classes_errors.setStyleSheet('background-color: #f0f0f0; border: none; color: red;')
-
-
 
         self.setLayout(hbox)
         self.create_btns_for_classes()
@@ -86,9 +73,7 @@ class CDFrame(QWidget):
         self.create_attr_for_mts()
         self.update()
 
-
     def create_btns_for_classes(self):
-
         self.del_class_btn = QPushButton("удалить класс", self.botRight)
         self.del_class_btn.clicked.connect(self.delete)
         self.del_class_btn.resize(100, 20)
@@ -106,7 +91,7 @@ class CDFrame(QWidget):
         self.ch_class = QComboBox(self.topRight)
         self.ch_class.resize(100, 20)
         self.ch_class.move(10, 25)
-        for c in classes:
+        for c in self.model.classes:
             self.ch_class.addItem(c.name)
 
         fl = QLabel("Добавить поле", self.topRight)
@@ -153,7 +138,7 @@ class CDFrame(QWidget):
         self.del_mt = QComboBox(self.topRight)
         if self.ch_class.currentText():
             cl = None
-            for c in classes:
+            for c in self.model.classes:
                 if c.name == self.ch_class.currentText():
                     cl = c
                     break
@@ -169,9 +154,9 @@ class CDFrame(QWidget):
         self.del_mt.resize(100, 20)
 
         self.del_field_b = QPushButton('удалить поле', self.topRight)
-        self.del_field_b.clicked.connect(self.d_f)
+        self.del_field_b.clicked.connect(self.delete_field)
         self.del_mt_b = QPushButton('удалить метод', self.topRight)
-        self.del_mt_b.clicked.connect(self.d_m)
+        self.del_mt_b.clicked.connect(self.delete_method)
         self.del_field_b.resize(100, 20)
         self.del_mt_b.resize(100, 20)
         self.del_field_b.move(10, 280)
@@ -192,9 +177,6 @@ class CDFrame(QWidget):
 
         self.ch_class.currentTextChanged.connect(self.change)
 
-
-
-
     def create_combos_for_classes(self):
         ql = QLabel("связи классов", self.botRight)
         ql.move(90, 55)
@@ -205,12 +187,12 @@ class CDFrame(QWidget):
         self.classes_type.move(102, 20)
 
         self.classes_combo = QComboBox(self.botRight)
-        for c in classes:
+        for c in self.model.classes:
             self.classes_combo.addItem(c.name)
         self.classes_combo.resize(100, 20)
 
         self.c1_combo = QComboBox(self.botRight)
-        for c in classes:
+        for c in self.model.classes:
             self.c1_combo.addItem(c.name)
         self.c1_combo.move(0, 70)
         self.c1_combo.resize(80, 20)
@@ -220,7 +202,7 @@ class CDFrame(QWidget):
         self.comment_c1.move(0, 95)
 
         self.link_combo = QComboBox(self.botRight)
-        self.link_combo.addItems(links)
+        self.link_combo.addItems(links_list)
         self.link_combo.move(85, 70)
         self.link_combo.resize(80, 20)
         self.comment_link = QLineEdit(self.botRight)
@@ -233,7 +215,7 @@ class CDFrame(QWidget):
         self.btn_link.move(65, 120)
 
         self.c2_combo = QComboBox(self.botRight)
-        for c in classes:
+        for c in self.model.classes:
             self.c2_combo.addItem(c.name)
         self.c2_combo.move(170, 70)
         self.c2_combo.resize(80, 20)
@@ -244,17 +226,16 @@ class CDFrame(QWidget):
 
     def delete(self):
         self.textbox_classes_errors.clear()
-        if not classes:
+        if not self.model.classes:
             return
-        for i in range(len(classes)):
-            if classes[i].name == self.classes_combo.currentText():
-                classes.pop(i)
-                break
+
+        self.controller.delete(self.classes_combo.currentText())
+
         self.classes_combo.clear()
         self.c1_combo.clear()
         self.c2_combo.clear()
         self.ch_class.clear()
-        for c in classes:
+        for c in self.model.classes:
             self.classes_combo.addItem(c.name)
             self.c1_combo.addItem(c.name)
             self.c2_combo.addItem(c.name)
@@ -264,18 +245,18 @@ class CDFrame(QWidget):
         self.textbox_classes_errors.clear()
         if not self.write_class.text():
             return
-        cl = Class(self.write_class.text(), self.classes_type.currentText())
-        for c in classes:
-            if c.name == cl.name:
-                self.textbox_classes_errors.setText("Такой класс уже существует")
-                return
-        classes.append(cl)
+
+        exists = self.controller.add_class(self.write_class.text(), self.classes_type.currentText())
+        if exists:
+            self.textbox_classes_errors.setText("Такой класс уже существует")
+            return
+
         self.classes_combo.clear()
         self.write_class.clear()
         self.c1_combo.clear()
         self.c2_combo.clear()
         self.ch_class.clear()
-        for c in classes:
+        for c in self.model.classes:
             self.classes_combo.addItem(c.name)
             self.c1_combo.addItem(c.name)
             self.c2_combo.addItem(c.name)
@@ -293,16 +274,9 @@ class CDFrame(QWidget):
         if c1 == '' or c2 == '':
             self.textbox_classes_errors.setText("введите все классы")
             return
-        for l in cl_links:
-            if c2 == l.cl1 and c1 == l.cl2 or c1 == l.cl1 and c2 == l.cl2:
-                l.cl1 = c1
-                l.cl2 = c2
-                l.comm = comm
-                l.left = c1_comm
-                l.right = c2_comm
-                l.tp = tp
-                return
-        cl_links.append(Link(tp, c1, c2, c1_comm, c2_comm, comm))
+        exists = self.controller.add_link(tp, c1, c2, c1_comm, c2_comm, comm)
+        if exists:
+            return
         self.comment_c1.clear()
         self.comment_c2.clear()
         self.comment_link.clear()
@@ -315,16 +289,13 @@ class CDFrame(QWidget):
         if not self.field_name.text():
             self.textbox_attr_errors.setText('Введите имя поля')
             return
-        cl = None
-        for c in classes:
-            if c.name == self.ch_class.currentText():
-                cl = c
-                break
-        for f in cl.flds:
-            if f.name == self.field_name.text():
-                self.textbox_attr_errors.setText('Поле с таким именем уже есть')
-                return
-        cl.flds.append(Field(self.field_name.text(), self.field_type.text(), self.field_mod.currentText()))
+
+        exists = self.controller.add_fld(self.ch_class.currentText(), self.field_name.text(),
+                                         self.field_type.text(), self.field_mod.currentText())
+        if exists:
+            self.textbox_attr_errors.setText('Поле с таким именем уже есть')
+            return
+
         self.del_field.addItem(self.field_name.text())
         self.field_name.setText('')
         self.field_type.setText('')
@@ -337,17 +308,13 @@ class CDFrame(QWidget):
         if not self.mt_name.text():
             self.textbox_attr_errors.setText('Введите имя метода')
             return
-        cl = None
-        for c in classes:
-            if c.name == self.ch_class.currentText():
-                cl = c
-                break
-        for f in cl.mts:
-            if f.name == self.mt_name.text():
-                self.textbox_attr_errors.setText('Метод с таким именем уже есть')
-                return
-        cl.mts.append(Method(self.mt_name.text(), self.mt_type.text(),
-                             self.mt_mod.currentText(), self.mt_params.text()))
+
+        exists = self.controller.add_mtd(self.ch_class.currentText(), self.mt_name.text(), self.mt_type.text(),
+                                         self.mt_mod.currentText(), self.mt_params.text())
+        if exists:
+            self.textbox_attr_errors.setText('Метод с таким именем уже есть')
+            return
+
         self.del_mt.addItem(self.mt_name.text())
         self.mt_name.setText('')
         self.mt_type.setText('')
@@ -358,7 +325,7 @@ class CDFrame(QWidget):
         self.del_field.clear()
         if self.ch_class.currentText():
             cl = None
-            for c in classes:
+            for c in self.model.classes:
                 if c.name == self.ch_class.currentText():
                     cl = c
                     break
@@ -367,50 +334,30 @@ class CDFrame(QWidget):
             for f in cl.flds:
                 self.del_mt.addItem(f.name)
 
-    def d_m(self):
+    def delete_method(self):
         if not self.del_mt.currentText():
             return
-        cl = None
-        for c in classes:
-            if c.name == self.ch_class.currentText():
-                cl = c
-                break
-        i = 0
-        for m in cl.mts:
-            if m.name == self.del_mt.currentText():
-                cl.mts.pop(i)
-                break
-            i += 1
+        cl = self.controller.delete_method(self.ch_class.currentText(), self.del_mt.currentText())
+
         self.del_mt.clear()
         for m in cl.mts:
             self.del_mt.addItem(m.name)
 
-    def d_f(self):
+    def delete_field(self):
         if not self.del_field.currentText():
             return
-        cl = None
-        for c in classes:
-            if c.name == self.ch_class.currentText():
-                cl = c
-                break
-        i = 0
-        for f in cl.flds:
-            if f.name == self.del_field.currentText():
-                cl.flds.pop(i)
-                break
-            i += 1
+        cl = self.controller.delete_field(self.ch_class.currentText(), self.del_field.currentText())
+
         self.del_field.clear()
         for f in cl.flds:
             self.del_field.addItem(f.name)
 
-
     def update(self):
-        if classes:
-            data = encode_class_diagram(classes, cl_links).encode(
-                'utf-8').hex()
-            response = requests.get(f'https://www.plantuml.com/plantuml/png/~h{data}')
+        if self.model.classes:
+            data = self.controller.update()
             diagram = QPixmap()
-            diagram.loadFromData(response.content)
+            diagram.loadFromData(data)
+
             w = diagram.width()
             h = diagram.height()
             self.labelLeft.setAlignment(Qt.AlignCenter)
@@ -420,21 +367,29 @@ class CDFrame(QWidget):
             self.labelLeft.update()
 
     def save(self):
-        data = serialize(CDEntity(classes, cl_links))
-        dialog = ClssDialog(data, 'cd')
+        data = self.controller.save()
+        dialog = ClssDialog(self.controller, data, 'cd')
         dialog.setWindowTitle('сохранение')
         dialog.setFixedSize(250, 100)
         dialog.exec_()
 
 
 class MainWindow(QMainWindow):
-    def __init__(self, parent=None):
+    def __init__(self, controller: ClassDiagramController, model: CDEntity, parent=None):
         super(MainWindow, self).__init__(parent)
-        self.createMenus()
-        self.area = CDFrame()
+
+        self.controller = controller
+        self.model = model
+
+        self.create_menus()
+        self.area = CDFrame(self.controller, self.model)
         self.setCentralWidget(self.area)
 
-    def createMenus(self):
+    def exit(self):
+        self.close()
+        sys.exit(0)
+
+    def create_menus(self):
         self.update = self.menuBar().addAction("&Обновить", self.update)
 
         self.sv = self.menuBar().addAction("&Сохранить", self.save)
@@ -447,50 +402,19 @@ class MainWindow(QMainWindow):
 
         self.toMenu = self.menuBar().addAction("&Меню", self.menu)
 
-        self.exit= self.menuBar().addAction("&Выход", self.close)
+        self.exit = self.menuBar().addAction("&Выход", self.exit)
 
     def export_code(self):
         dirlist = QFileDialog.getExistingDirectory(self, "Выбрать папку", ".")
-        if classes:
-            data = encode_class_diagram(classes, cl_links)
-            file = f'{dirlist}/cd.txt'
-            if os.path.isfile(file):
-                i = 0
-                while os.path.isfile(f'{dirlist}/cd{i}'):
-                    i += 1
-                file = f'{dirlist}/cd{i}.txt'
-            with open(file, 'w') as target:
-                target.write(data)
+        self.controller.export_code(dirlist)
 
     def export_png(self):
         dirlist = QFileDialog.getExistingDirectory(self, "Выбрать папку", ".")
-        if classes:
-            data = encode_class_diagram(classes, cl_links).encode(
-                'utf-8').hex()
-            file = f'{dirlist}/cd.png'
-            if os.path.isfile(file):
-                i = 0
-                while os.path.isfile(f'{dirlist}/cd{i}'):
-                    i += 1
-                file = f'{dirlist}/cd{i}.png'
-            with open(file, 'wb') as target:
-                response = requests.get(f'https://www.plantuml.com/plantuml/png/~h{data}')
-                target.write(response.content)
+        self.controller.export_png(dirlist)
 
     def export_svg(self):
         dirlist = QFileDialog.getExistingDirectory(self, "Выбрать папку", ".")
-        if classes:
-            data = encode_class_diagram(classes, cl_links).encode(
-                'utf-8').hex()
-            file = f'{dirlist}/cd.svg'
-            if os.path.isfile(file):
-                i = 0
-                while os.path.isfile(f'{dirlist}/cd{i}'):
-                    i += 1
-                file = f'{dirlist}/cd{i}.svg'
-            with open(file, 'wb') as target:
-                response = requests.get(f'https://www.plantuml.com/plantuml/svg/~h{data}')
-                target.write(response.content)
+        self.controller.export_svg(dirlist)
 
     def update(self):
         self.area.update()
@@ -499,20 +423,5 @@ class MainWindow(QMainWindow):
         self.area.save()
 
     def menu(self):
+        self.controller.show_menu()
         self.close()
-        main_window.ex = Menu()
-        main_window.ex.setGeometry(1000, 1000, 1000, 600)
-        main_window.ex.setFixedSize(500, 350)
-        main_window.ex.move(QApplication.desktop().screen().rect().center() - main_window.ex.rect().center())
-        main_window.ex.setWindowTitle('меню')
-        main_window.ex.show()
-
-
-
-if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    ex = MainWindow()
-    ex.setGeometry(1000, 1000, 1000, 600)
-    ex.setWindowTitle('диаграмма классов')
-    ex.show()
-    sys.exit(app.exec_())
