@@ -1,4 +1,4 @@
-from core.encoder import encode_class_diagram, encode_acts_diagram
+from business.encoder import encode_acts_diagram, encode_class_diagram
 from core.model import Class, Field, Acts
 
 str = "@startuml\nclass ааа {\n+ 123 asdas\n}\n@enduml"

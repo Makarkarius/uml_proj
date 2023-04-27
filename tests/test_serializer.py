@@ -1,6 +1,6 @@
+from business.serializer import deserialize, serialize
 from core.entity import ActsEntity
 from core.model import Acts
-from core.serializers import serialize, deserialize
 
 
 def test_serialization():
